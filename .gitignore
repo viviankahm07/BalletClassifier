@@ -1,0 +1,28 @@
+# Training data — too large for GitHub
+data/raw_images/
+data/keypoints/
+data/augmented/
+data/splits/
+
+# Trained models
+models/
+
+# MediaPipe model file
+src/extraction/pose_landmarker_heavy.task
+
+# MLflow experiment runs
+mlruns/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/

@@ -1,0 +1,34 @@
+data:
+  raw_images_dir: "data/raw_images"
+  keypoints_dir: "data/keypoints"
+  labels_path: "data/labels/labels.csv"
+  augmented_dir: "data/augmented"
+  splits_dir: "data/splits"
+
+classes:
+  - first_position
+  - second_position
+  - third_position
+  - fourth_position
+  - fifth_position
+  - arabesque
+  - attitude_derriere
+  - attitude_devant
+  - passe
+  - tendu_devant
+  - tendu_a_la_seconde
+  - tendu_derriere
+  - developpe
+  - grand_battement
+  - penche
+
+splits:
+  train: 0.70
+  val: 0.15
+  test: 0.15
+  stratify_by: class     # ensures each split has balanced class representation
+  random_seed: 42
+
+image:
+  valid_extensions: [".jpg", ".jpeg", ".png"]
+  min_images_per_class: 100  # warn if a class has fewer than this

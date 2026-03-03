@@ -1,0 +1,34 @@
+experiment_name: "ballet_static_classifier"
+
+models:
+  random_forest:
+    n_estimators: 200
+    max_depth: null
+    min_samples_split: 2
+    random_state: 42
+
+  svm:
+    kernel: "rbf"
+    C: 1.0
+    gamma: "scale"
+    probability: true  # needed for confidence scores
+
+  gradient_boosting:
+    n_estimators: 150
+    learning_rate: 0.1
+    max_depth: 4
+    random_state: 42
+
+  mlp:
+    hidden_layers: [128, 64, 32]
+    dropout: 0.3
+    learning_rate: 0.001
+    epochs: 100
+    batch_size: 32
+    early_stopping_patience: 10
+
+features:
+  use_joint_angles: true
+  use_raw_keypoints: false   # set true to experiment with raw xyz
+  normalize_keypoints: true
+  confidence_threshold: 0.5  # minimum MediaPipe landmark confidence
