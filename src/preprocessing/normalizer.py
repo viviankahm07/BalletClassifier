@@ -38,7 +38,17 @@ FEATURE_NAMES = list(JOINT_ANGLE_TRIPLETS.keys())
 # Used for positions where which arm is up doesn't matter (e.g. third, fourth position).
 SYMMETRIC_ARM_FEATURE_NAMES = ["elbow_high", "elbow_low", "shoulder_high", "shoulder_low"]
 
-ALL_FEATURE_NAMES = FEATURE_NAMES + SYMMETRIC_ARM_FEATURE_NAMES
+# Symmetric leg feature names — sorted pairs so standing vs working leg distinction is removed.
+# hip_high = whichever hip is more extended (working leg), hip_low = standing leg hip angle.
+# Used for one-legged poses (arabesque, penche, tendu, attitude) so left/right don't matter.
+SYMMETRIC_LEG_FEATURE_NAMES = [
+    "hip_high", "hip_low",
+    "knee_high", "knee_low",
+    "ankle_high", "ankle_low",
+    "hip_abduct_high", "hip_abduct_low",
+]
+
+ALL_FEATURE_NAMES = FEATURE_NAMES + SYMMETRIC_ARM_FEATURE_NAMES + SYMMETRIC_LEG_FEATURE_NAMES
 
 
 def _angle_between(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> float:
@@ -112,26 +122,46 @@ def extract_joint_angles(keypoints: np.ndarray) -> np.ndarray:
 
 def extract_all_features(keypoints: np.ndarray) -> np.ndarray:
     """
-    Extract all features: the 12 regular joint angles plus 4 symmetric arm angles.
+    Extract all features: 12 regular joint angles + 4 symmetric arm + 8 symmetric leg angles.
 
-    The symmetric arm angles sort left/right pairs so the model cannot distinguish
-    which arm is raised — useful for positions like third and fourth where either
-    arm can be en haut.
+    Symmetric arm angles sort left/right pairs so the model cannot distinguish which arm
+    is raised (used for third/fourth position).
+
+    Symmetric leg angles sort left/right pairs so the model cannot distinguish which leg
+    is the working leg (used for arabesque, penche, tendu, attitude, grand_battement, developpe).
 
     Returns:
-        shape (16,) — 12 regular + 4 symmetric arm angles
+        shape (24,) — 12 regular + 4 symmetric arm + 8 symmetric leg angles
     """
     regular = extract_joint_angles(keypoints)
 
-    left_elbow   = regular[FEATURE_NAMES.index("left_elbow")]
-    right_elbow  = regular[FEATURE_NAMES.index("right_elbow")]
+    # Symmetric arms
+    left_elbow     = regular[FEATURE_NAMES.index("left_elbow")]
+    right_elbow    = regular[FEATURE_NAMES.index("right_elbow")]
     left_shoulder  = regular[FEATURE_NAMES.index("left_shoulder")]
     right_shoulder = regular[FEATURE_NAMES.index("right_shoulder")]
-
-    elbow_high,   elbow_low   = sorted([left_elbow,   right_elbow],   reverse=True)
+    elbow_high,    elbow_low    = sorted([left_elbow,    right_elbow],   reverse=True)
     shoulder_high, shoulder_low = sorted([left_shoulder, right_shoulder], reverse=True)
 
-    return np.concatenate([regular, [elbow_high, elbow_low, shoulder_high, shoulder_low]])
+    # Symmetric legs
+    left_hip          = regular[FEATURE_NAMES.index("left_hip")]
+    right_hip         = regular[FEATURE_NAMES.index("right_hip")]
+    left_knee         = regular[FEATURE_NAMES.index("left_knee")]
+    right_knee        = regular[FEATURE_NAMES.index("right_knee")]
+    left_ankle        = regular[FEATURE_NAMES.index("left_ankle")]
+    right_ankle       = regular[FEATURE_NAMES.index("right_ankle")]
+    left_hip_abduct   = regular[FEATURE_NAMES.index("left_hip_abduct")]
+    right_hip_abduct  = regular[FEATURE_NAMES.index("right_hip_abduct")]
+    hip_high,       hip_low       = sorted([left_hip,         right_hip],        reverse=True)
+    knee_high,      knee_low      = sorted([left_knee,        right_knee],       reverse=True)
+    ankle_high,     ankle_low     = sorted([left_ankle,       right_ankle],      reverse=True)
+    hip_abduct_high, hip_abduct_low = sorted([left_hip_abduct, right_hip_abduct], reverse=True)
+
+    return np.concatenate([
+        regular,
+        [elbow_high, elbow_low, shoulder_high, shoulder_low],
+        [hip_high, hip_low, knee_high, knee_low, ankle_high, ankle_low, hip_abduct_high, hip_abduct_low],
+    ])
 
 
 def normalize_features(features: np.ndarray) -> np.ndarray:

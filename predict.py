@@ -44,7 +44,8 @@ def predict_single_image(image_path: str, model_path: str, classes_path: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", required=True)
-    parser.add_argument("--model", default="models/saved/best_model_random_forest.pkl")
+    parser.add_argument(
+        "--model", default="models/saved/best_model_random_forest.pkl")
     parser.add_argument("--classes", default="data/splits/label_classes.npy")
     args = parser.parse_args()
 

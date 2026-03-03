@@ -12,30 +12,32 @@ Rationale:
   since both arms and legs define the position.
 """
 
-# Leg-only features — ignore arm angles entirely
+# Symmetric leg features — sorted pairs so the model cannot distinguish which leg
+# is the working leg. hip_high = more extended (working) leg, hip_low = standing leg.
+# Used for one-legged poses so left arabesque == right arabesque, etc.
 LEG_FEATURES = [
-    "left_knee",
-    "right_knee",
-    "left_hip",
-    "right_hip",
-    "left_ankle",
-    "right_ankle",
-    "left_hip_abduct",
-    "right_hip_abduct",
+    "hip_high",
+    "hip_low",
+    "knee_high",
+    "knee_low",
+    "ankle_high",
+    "ankle_low",
+    "hip_abduct_high",
+    "hip_abduct_low",
 ]
 
-# Leg angles + symmetric arm angles (elbow_high/low, shoulder_high/low).
-# "high" = whichever arm is more extended; "low" = the more bent one.
-# This makes mirrored arm configurations look identical to the model.
+# Symmetric leg + symmetric arm angles.
+# Both left/right arm and left/right leg distinctions are removed.
+# This makes mirrored configurations look identical to the model.
 SYMMETRIC_BODY_FEATURES = [
-    "left_knee",
-    "right_knee",
-    "left_hip",
-    "right_hip",
-    "left_ankle",
-    "right_ankle",
-    "left_hip_abduct",
-    "right_hip_abduct",
+    "hip_high",
+    "hip_low",
+    "knee_high",
+    "knee_low",
+    "ankle_high",
+    "ankle_low",
+    "hip_abduct_high",
+    "hip_abduct_low",
     "elbow_high",
     "elbow_low",
     "shoulder_high",
