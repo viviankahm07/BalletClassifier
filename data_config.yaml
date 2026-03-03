@@ -18,9 +18,15 @@ classes:
   - tendu_devant
   - tendu_a_la_seconde
   - tendu_derriere
-  - developpe
-  - grand_battement
   - penche
+  - demi_plie
+  - grand_plie
+  - degage_devant
+  - degage_a_la_seconde
+  - degage_derriere
+  - fondu
+  - releve
+  - saute
 
 splits:
   train: 0.70
