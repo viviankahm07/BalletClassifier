@@ -4,12 +4,13 @@ feature_groups.py
 Defines which joint angle features are relevant for each group of ballet positions.
 
 Rationale:
-- Leg-focused positions (tendu, arabesque, grand_battement, etc.) are distinguished
+- Leg-focused positions (tendu, arabesque, attitude, passe, etc.) are distinguished
   primarily by leg angles. Arm positions vary with port de bras and add noise.
-- Symmetric-body positions (third, fourth) use sorted arm pairs so the model
-  cannot distinguish left-arm-up from right-arm-up — both count as the same position.
-- Full-body positions (1st, 2nd, 5th, passe, attitude) use all directional angles
-  since both arms and legs define the position.
+  Symmetric leg features mean left/right versions of a pose look identical to the model.
+- Symmetric-body positions (third, fourth) use sorted arm+leg pairs so neither
+  which arm is up nor which leg is front matters.
+- Full-body positions (1st, 2nd, 5th) use all directional angles since arm AND
+  leg positions together define the position.
 """
 
 # Symmetric leg features — sorted pairs so the model cannot distinguish which leg
@@ -68,9 +69,18 @@ FEATURE_GROUPS = {
             "tendu_a_la_seconde",
             "tendu_derriere",
             "arabesque",
-            "grand_battement",
-            "developpe",
+            "attitude_derriere",
+            "attitude_devant",
+            "passe",
             "penche",
+            "demi_plie",
+            "grand_plie",
+            "degage_devant",
+            "degage_a_la_seconde",
+            "degage_derriere",
+            "fondu",
+            "releve",
+            "saute",
         ],
     },
     "symmetric_body": {
@@ -86,9 +96,6 @@ FEATURE_GROUPS = {
             "first_position",
             "second_position",
             "fifth_position",
-            "passe",
-            "attitude_derriere",
-            "attitude_devant",
         ],
     },
 }
