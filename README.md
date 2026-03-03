@@ -1,139 +1,111 @@
-# Ballet Pose Classifier — Static Module
+# Ballet Pose Classifier
 
 A machine learning pipeline that classifies ballet positions from a single image using pose estimation and joint angle features.
 
 ## How It Works
 
 ```
-Image → MediaPipe Pose → 33 3D Keypoints → Joint Angle Normalization → ML Classifier → Ballet Position Label
+Image → MediaPipe Pose → 33 3D Keypoints → Joint Angle Features → ML Classifier → Ballet Position Label
 ```
 
 Instead of training on raw pixels, the model uses **joint angles** derived from skeletal keypoints. This makes the classifier:
 - **Rotation-invariant** — works from multiple camera angles
 - **Scale-invariant** — works regardless of dancer's distance from camera
-- **Body-type agnostic** — not biased toward a specific dancer's proportions
+- **Side-invariant** — left arabesque and right arabesque are treated as the same pose
 
 ## Supported Positions
 
-| Class | Label |
+| Category | Classes |
 |---|---|
-| First Position | `first_position` |
-| Second Position | `second_position` |
-| Third Position | `third_position` |
-| Fourth Position | `fourth_position` |
-| Fifth Position | `fifth_position` |
-| Arabesque | `arabesque` |
-| Attitude | `attitude` |
-| Tendu | `tendu` |
+| Positions | `first_position`, `second_position`, `third_position`, `fourth_position`, `fifth_position` |
+| One-legged | `arabesque`, `attitude_derriere`, `attitude_devant`, `passe`, `penche` |
+| Tendu | `tendu_devant`, `tendu_a_la_seconde`, `tendu_derriere` |
+| Dégagé | `degage_devant`, `degage_a_la_seconde`, `degage_derriere` |
+| Two-legged | `demi_plie`, `grand_plie`, `fondu`, `releve`, `saute` |
 
 ## Project Structure
 
 ```
-ballet-pose-classifier/
+BalletClassifier/
 ├── src/
 │   ├── extraction/
-│   │   ├── pose_extractor.py      # MediaPipe keypoint extraction
-│   │   └── image_loader.py        # Image loading + validation
+│   │   └── pose_extractor.py      # MediaPipe keypoint extraction
 │   ├── preprocessing/
-│   │   ├── normalizer.py          # Keypoints → joint angles
-│   │   ├── augmentor.py           # Data augmentation
+│   │   ├── normalizer.py          # Keypoints → joint angle features
 │   │   └── dataset_builder.py     # Build train/val/test splits
 │   ├── models/
-│   │   ├── classifier.py          # RF, SVM, MLP wrappers
-│   │   └── train.py               # Training loop + MLflow logging
-│   ├── evaluation/
-│   │   ├── metrics.py             # Accuracy, per-class F1, confusion matrix
-│   │   └── visualize_results.py   # Plot confusion matrix and keypoints
+│   │   ├── classifier.py          # RF, SVM, Gradient Boosting wrappers
+│   │   └── grouped_classifier.py  # Feature-group-aware classifier
 │   └── utils/
 │       ├── config.py              # Load YAML configs
-│       └── helpers.py             # Shared utility functions
+│       └── feature_groups.py      # Which features each pose group uses
 ├── data/
 │   ├── raw_images/                # One subfolder per class (gitignored)
-│   │   ├── first_position/
-│   │   ├── second_position/
-│   │   └── ...
-│   ├── keypoints/                 # Extracted CSVs (gitignored)
-│   ├── labels/                    # labels.csv — committed to git
-│   ├── augmented/                 # Augmented images (gitignored)
 │   └── splits/                    # train/val/test CSVs (gitignored)
-├── configs/
-│   ├── model_config.yaml          # Model hyperparameters
-│   └── data_config.yaml           # Paths, class names, split ratios
-├── scripts/
-│   ├── collect_data.py            # Download frames from YouTube videos
-│   ├── build_dataset.py           # Run extraction + build splits
-│   ├── run_training.py            # Train all models + log to MLflow
-│   └── predict.py                 # Run inference on a single image
-├── demo/
-│   └── app.py                     # Streamlit web demo
-├── notebooks/
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_model_training.ipynb
-│   └── 03_evaluation.ipynb
-├── tests/
-│   ├── test_extractor.py
-│   ├── test_normalizer.py
-│   └── test_classifier.py
-├── mlruns/                        # MLflow experiment runs (gitignored)
-├── requirements.txt
-└── README.md
+├── app.py                         # Streamlit web demo
+├── build_dataset.py               # Run pose extraction + build splits
+├── run_training.py                # Train all models + log to MLflow
+├── predict.py                     # Run inference on a single image
+├── train.py                       # Training logic
+├── data_config.yaml               # Class names, split ratios, paths
+├── model_config.yaml              # Model hyperparameters
+└── requirements.txt
+```
 
 ## Quickstart
 
 ### 1. Install dependencies
 ```bash
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Collect data
-Add images to `data/raw_images/<class_name>/` — at least 100 images per class.
-Images should be JPG or PNG. Subfolders act as class labels automatically.
+### 2. Add training images
+Add images to `data/raw_images/<class_name>/` — at least 100 images per class recommended. Images should be JPG or PNG.
 
 ### 3. Build dataset
 ```bash
-python scripts/build_dataset.py
+python3 build_dataset.py
 ```
-This runs pose extraction on every image and builds train/val/test splits.
+Runs pose extraction on every image and builds train/val/test splits.
 
 ### 4. Train
 ```bash
-python scripts/run_training.py
+python3 run_training.py
 ```
 View experiment results:
 ```bash
 mlflow ui
 ```
 
-### 5. Predict
+### 5. Run demo
 ```bash
-python scripts/predict.py --image path/to/your/image.jpg
+streamlit run app.py
 ```
 
-### 6. Run demo
+### 6. Predict on a single image
 ```bash
-streamlit run demo/app.py
+python3 predict.py --image path/to/image.jpg
 ```
 
 ## Data Collection Tips
 
-- **YouTube**: Search "ballet positions tutorial" and screenshot clean holds
-- **yt-dlp**: `yt-dlp -x --write-thumbnail <url>` to grab frames
-- **Angle variety**: Capture front, side (90°), and diagonal (45°) views for each position
-- **Target**: 150-300 images per class minimum
+- Screenshot clear holds from YouTube ballet tutorials
+- Aim for 100+ images per class
+- Capture a mix of front, side, and diagonal views
+- For side-invariant poses (arabesque, tendu, etc.) you can use images from either side
 
-## Results Tracking
+## Feature Design
 
-All training runs are logged with MLflow. Models are compared on:
-- Overall accuracy
-- Per-class F1 score
-- Confusion matrix
+The model uses 24 joint angle features per image:
+- **12 directional angles** — left/right knee, hip, elbow, shoulder, ankle, hip abduction
+- **4 symmetric arm angles** — sorted pairs so left-arm-up and right-arm-up look identical (used for third/fourth position)
+- **8 symmetric leg angles** — sorted pairs so left-leg and right-leg versions look identical (used for all one-legged poses)
+
+A **GroupedClassifier** trains separate sub-models per feature group so each pose type only uses the features relevant to it.
 
 ## Tech Stack
 
-- **MediaPipe** — pose estimation
+- **MediaPipe** — pose estimation (Tasks API)
 - **scikit-learn** — Random Forest, SVM, Gradient Boosting
-- **TensorFlow/Keras** — MLP
 - **MLflow** — experiment tracking
 - **Streamlit** — demo UI
