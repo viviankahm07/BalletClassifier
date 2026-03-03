@@ -26,3 +26,9 @@ venv/
 
 # VS Code
 .vscode/
+
+# Claude Code settings
+.claude/
+
+# MLflow database
+mlflow.db

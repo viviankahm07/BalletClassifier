@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(echo $HOME)",
-      "Bash(python3 build_dataset.py)"
-    ]
-  }
-}
