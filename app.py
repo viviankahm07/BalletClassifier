@@ -24,11 +24,19 @@ st.title("🩰 Ballet Pose Classifier")
 st.write("Upload a photo of a ballet position and the model will identify it.")
 
 # Load model (cached so it only loads once)
+
+
 @st.cache_resource
 def load_model():
-    model = BalletClassifierBase.load("models/saved/best_model_random_forest.pkl")
+    saved_dir = "models/saved"
+    pkl_files = [f for f in os.listdir(saved_dir) if f.endswith(".pkl")]
+    if not pkl_files:
+        raise FileNotFoundError("No trained model found. Run training first.")
+    latest = max(pkl_files, key=lambda f: os.path.getmtime(os.path.join(saved_dir, f)))
+    model = BalletClassifierBase.load(os.path.join(saved_dir, latest))
     classes = np.load("data/splits/label_classes.npy", allow_pickle=True)
     return model, classes
+
 
 try:
     model, class_names = load_model()
@@ -37,7 +45,8 @@ except Exception as e:
     st.warning(f"Model not loaded yet: {e}. Run training first.")
     model_loaded = False
 
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader(
+    "Choose an image...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file and model_loaded:
     # Save to temp file for OpenCV
@@ -48,7 +57,8 @@ if uploaded_file and model_loaded:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+        st.image(uploaded_file, caption="Uploaded Image",
+                 use_column_width=True)
 
     extractor = PoseExtractor()
     result = extractor.extract(tmp_path)
@@ -70,6 +80,7 @@ if uploaded_file and model_loaded:
             st.subheader("All Probabilities")
             sorted_probs = sorted(zip(class_names, proba), key=lambda x: -x[1])
             for cls, prob in sorted_probs:
-                st.progress(float(prob), text=f"{cls.replace('_', ' ').title()}: {prob:.1%}")
+                st.progress(
+                    float(prob), text=f"{cls.replace('_', ' ').title()}: {prob:.1%}")
 
     os.unlink(tmp_path)

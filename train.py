@@ -27,7 +27,8 @@ def load_splits(splits_dir: str = "data/splits"):
     train_df = pd.read_csv(os.path.join(splits_dir, "train.csv"))
     val_df = pd.read_csv(os.path.join(splits_dir, "val.csv"))
     test_df = pd.read_csv(os.path.join(splits_dir, "test.csv"))
-    label_classes = np.load(os.path.join(splits_dir, "label_classes.npy"), allow_pickle=True)
+    label_classes = np.load(os.path.join(
+        splits_dir, "label_classes.npy"), allow_pickle=True)
 
     feature_names = list(train_df.drop("label", axis=1).columns)
 
@@ -48,7 +49,8 @@ def train_all_models(
 ):
     """Train all models, log to MLflow, save the best one."""
 
-    X_train, X_val, X_test, y_train, y_val, y_test, label_classes, feature_names = load_splits(splits_dir)
+    X_train, X_val, X_test, y_train, y_val, y_test, label_classes, feature_names = load_splits(
+        splits_dir)
     print(f"Train: {X_train.shape} | Val: {X_val.shape} | Test: {X_test.shape}")
 
     mlflow.set_experiment(experiment_name)
@@ -109,9 +111,11 @@ def train_all_models(
             mlflow.log_metric("train_size", len(X_train))
 
             print(f"  Val Accuracy: {val_acc:.4f} | Val F1: {val_f1:.4f}")
-            print(classification_report(y_val, y_val_pred, target_names=label_classes))
+            print(classification_report(
+                y_val, y_val_pred, target_names=label_classes))
 
-            results["grouped_classifier"] = {"val_acc": val_acc, "val_f1": val_f1}
+            results["grouped_classifier"] = {
+                "val_acc": val_acc, "val_f1": val_f1}
 
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
