@@ -54,7 +54,8 @@ def build_dataset(
         ]
 
         if len(image_paths) < min_images:
-            print(f"  WARNING: {class_name} has only {len(image_paths)} images (minimum recommended: {min_images})")
+            print(
+                f"  WARNING: {class_name} has only {len(image_paths)} images (minimum recommended: {min_images})")
 
         print(f"  {class_name}: {len(image_paths)} images")
 
@@ -74,10 +75,12 @@ def build_dataset(
             record["label"] = class_name
             records.append(record)
 
-    print(f"\nExtracted {len(records)} valid samples ({skipped} skipped — pose not detected or too low confidence)\n")
+    print(
+        f"\nExtracted {len(records)} valid samples ({skipped} skipped — pose not detected or too low confidence)\n")
 
     if not records:
-        raise ValueError("No valid samples found. Check that images exist and bodies are clearly visible.")
+        raise ValueError(
+            "No valid samples found. Check that images exist and bodies are clearly visible.")
 
     df = pd.DataFrame(records)
     label_classes = np.array(sorted(df["label"].unique()))
@@ -96,7 +99,8 @@ def build_dataset(
         random_state=split_cfg["random_seed"],
     )
 
-    val_size_adjusted = split_cfg["val"] / (split_cfg["train"] + split_cfg["val"])
+    val_size_adjusted = split_cfg["val"] / \
+        (split_cfg["train"] + split_cfg["val"])
     min_trainval_per_class = train_val_df["label"].value_counts().min()
     train_df, val_df = train_test_split(
         train_val_df,
