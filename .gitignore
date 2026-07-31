@@ -1,34 +1,59 @@
-# Training data — too large for GitHub
-data/raw_images/
-data/keypoints/
-data/augmented/
-data/splits/
+# Training data — never published. Source images and the joint angle CSVs
+# derived from them stay local. The one exception is label_classes.npy, which is
+# just the list of class names and contains no image-derived data.
+# NOTE: these patterns are anchored with a leading slash so they match only the
+# top-level directories. An unanchored "models/" would also exclude src/models/.
+/data/*
+!/data/splits/
+/data/splits/*
+!/data/splits/label_classes.npy
 
-# Trained models
-models/
+# Trained models — only the best model is committed, so the demo runs on clone.
+# Other .pkl experiments stay local.
+/models/*
+!/models/saved/
+/models/saved/*
+!/models/saved/best_model_random_forest.pkl
 
-# MediaPipe model file
+# MediaPipe model file (~25MB, downloaded automatically on first run)
 src/extraction/pose_landmarker_heavy.task
 
 # MLflow experiment runs
-mlruns/
+/mlruns/
+/mlartifacts/
+/mlflow.db
 
 # Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Virtual environments
 .venv/
 venv/
-*.egg-info/
+env/
+ENV/
 
-# macOS
-.DS_Store
+# Secrets and local config
+.env
+.env.*
+!.env.example
+*.local
 
-# VS Code
+# Editors
 .vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Claude Code settings
 .claude/
-
-# MLflow database
-mlflow.db

@@ -11,7 +11,6 @@ Why angles instead of raw coordinates?
 """
 
 import numpy as np
-from typing import Optional
 
 
 # Key joint triplets: (point_a, vertex, point_b)
@@ -128,7 +127,7 @@ def extract_all_features(keypoints: np.ndarray) -> np.ndarray:
     is raised (used for third/fourth position).
 
     Symmetric leg angles sort left/right pairs so the model cannot distinguish which leg
-    is the working leg (used for arabesque, penche, tendu, attitude, grand_battement, developpe).
+    is the working leg (used for arabesque, penche, tendu, degage, attitude).
 
     Returns:
         shape (24,) — 12 regular + 4 symmetric arm + 8 symmetric leg angles

@@ -79,8 +79,6 @@ FEATURE_GROUPS = {
             "degage_a_la_seconde",
             "degage_derriere",
             "fondu",
-            "releve",
-            "saute",
         ],
     },
     "symmetric_body": {

@@ -14,7 +14,3 @@ def load_config(path: str) -> dict:
 
 def load_data_config(path: str = "data_config.yaml") -> dict:
     return load_config(path)
-
-
-def load_model_config(path: str = "model_config.yaml") -> dict:
-    return load_config(path)

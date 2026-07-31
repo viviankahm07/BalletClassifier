@@ -4,7 +4,7 @@ predict.py
 Run inference on a single image using the best saved model.
 
 Usage:
-    python scripts/predict.py --image path/to/image.jpg
+    python3 predict.py --image path/to/image.jpg
 """
 
 import argparse

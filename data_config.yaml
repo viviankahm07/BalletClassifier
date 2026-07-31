@@ -1,9 +1,5 @@
-data:
-  raw_images_dir: "data/raw_images"
-  keypoints_dir: "data/keypoints"
-  labels_path: "data/labels/labels.csv"
-  augmented_dir: "data/augmented"
-  splits_dir: "data/splits"
+# Input and output directories are set with the --images and --splits flags
+# on build_dataset.py (defaults: data/raw_images and data/splits).
 
 classes:
   - first_position
@@ -25,15 +21,14 @@ classes:
   - degage_a_la_seconde
   - degage_derriere
   - fondu
-  - releve
-  - saute
 
 splits:
   train: 0.70
   val: 0.15
   test: 0.15
-  stratify_by: class     # ensures each split has balanced class representation
   random_seed: 42
+  # Splits are stratified by class when every class has at least 3 samples,
+  # so each split keeps a balanced class representation.
 
 image:
   valid_extensions: [".jpg", ".jpeg", ".png"]
