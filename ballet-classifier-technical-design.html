@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ballet Pose Classifier — Technical Design</title>
+  <style>
+    :root {
+      --plum: #c9708f;
+      --plum-2: #d98fa8;
+      --gold: #b98a9a;
+      --light-gold: #fdf1f4;
+      --light-plum: #fdf1f5;
+      --pale: #fffafb;
+      --ink: #40323a;
+      --muted: #a38893;
+      --line: #f6e2e8;
+      --card: #fff;
+      --bg: #fdf8f9;
+      --code-bg: #3d2b33;
+      --green: #b98a9a;
+      --amber: #cf9a72;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.55
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr);
+      min-height: 100vh
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 28px 22px;
+      background: linear-gradient(180deg, var(--plum), #a15a76);
+      color: #fff
+    }
+
+    .brand {
+      font-weight: 800;
+      font-size: 18px;
+      margin-bottom: 4px
+    }
+
+    .brand-subtitle {
+      color: #f5d6e0;
+      font-size: 12px;
+      margin-bottom: 24px
+    }
+
+    nav a {
+      display: block;
+      color: #fbe8ee;
+      text-decoration: none;
+      padding: 8px 10px;
+      margin: 2px 0;
+      border-radius: 8px;
+      font-size: 13px
+    }
+
+    nav a:hover {
+      background: rgba(255, 255, 255, .12);
+      color: #fff
+    }
+
+    nav .nav-group {
+      color: #e3a9bc;
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 800;
+      margin: 16px 10px 4px
+    }
+
+    main {
+      width: 100%;
+      max-width: 1180px;
+      padding: 36px 42px 72px
+    }
+
+    .hero {
+      padding: 44px 48px;
+      background: radial-gradient(circle at top right, rgba(217, 143, 168, .32), transparent 34%), linear-gradient(135deg, var(--plum), #b56d87);
+      color: #fff;
+      border-radius: 24px;
+      box-shadow: 0 20px 50px rgba(201, 112, 143, .2);
+      margin-bottom: 28px
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .14);
+      color: #fdeef3;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 16px
+    }
+
+    h1 {
+      font-size: 42px;
+      line-height: 1.05;
+      margin: 0 0 12px;
+      letter-spacing: -.04em
+    }
+
+    .subtitle {
+      font-size: 18px;
+      color: #fdeef3;
+      margin: 0 0 16px;
+      max-width: 880px
+    }
+
+    .hero-note {
+      margin: 0;
+      color: #f6dae2;
+      max-width: 900px
+    }
+
+    .section-card {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 30px;
+      margin: 22px 0;
+      box-shadow: 0 12px 28px rgba(201, 112, 143, .08);
+      overflow: visible
+    }
+
+    .section-card h2 {
+      color: var(--plum);
+      margin: 0 0 16px;
+      font-size: 27px;
+      letter-spacing: -.03em;
+      line-height: 1.2
+    }
+
+    .section-card h3 {
+      color: var(--plum);
+      margin: 24px 0 10px;
+      font-size: 20px;
+      letter-spacing: -.02em
+    }
+
+    .section-card h4 {
+      color: var(--plum);
+      margin: 18px 0 6px;
+      font-size: 15px
+    }
+
+    .section-card p {
+      margin: 0 0 14px;
+      color: #392f3f
+    }
+
+    .section-kicker {
+      color: var(--gold);
+      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      margin-bottom: 8px
+    }
+
+    .callout-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin: 20px 0 4px
+    }
+
+    .callout {
+      background: var(--light-plum);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px
+    }
+
+    .callout .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: .06em
+    }
+
+    .callout .value {
+      color: var(--plum);
+      font-weight: 800;
+      font-size: 17px;
+      margin-top: 4px
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      margin: 18px 0 6px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px
+    }
+
+    th {
+      background: var(--plum);
+      color: #fff;
+      text-align: left;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.35;
+      vertical-align: top;
+      white-space: nowrap
+    }
+
+    td {
+      padding: 12px 14px;
+      border-top: 1px solid var(--line);
+      vertical-align: top;
+      font-size: 13px;
+      line-height: 1.42;
+      white-space: normal;
+      overflow-wrap: break-word
+    }
+
+    tr:nth-child(even) td {
+      background: var(--light-plum)
+    }
+
+    code {
+      background: var(--light-gold);
+      color: #9c5c6e;
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-size: 12.5px;
+      font-family: "SFMono-Regular", Consolas, Menlo, monospace
+    }
+
+    .code-block {
+      background: var(--code-bg);
+      color: #faeaee;
+      padding: 22px;
+      border-radius: 16px;
+      overflow-x: auto;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.52;
+      border: 1px solid rgba(255, 255, 255, .12);
+      white-space: pre
+    }
+
+    .code-block code {
+      background: none;
+      color: inherit;
+      padding: 0
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 18px
+    }
+
+    .flow-step {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 12px;
+      align-items: flex-start;
+      background: var(--light-plum);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 13px 15px
+    }
+
+    .flow-num {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: var(--plum-2);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 13px
+    }
+
+    .flow-title {
+      font-weight: 800;
+      color: var(--plum);
+      margin-bottom: 2px
+    }
+
+    .flow-desc {
+      color: #4d4055;
+      font-size: 13px
+    }
+
+    .check-list {
+      list-style: none;
+      margin: 16px 0 0;
+      padding: 0;
+      display: grid;
+      gap: 10px
+    }
+
+    .check-list li {
+      position: relative;
+      padding: 12px 14px 12px 42px;
+      background: var(--light-plum);
+      border: 1px solid var(--line);
+      border-radius: 12px
+    }
+
+    .check-list li::before {
+      content: "\2713";
+      position: absolute;
+      left: 14px;
+      top: 10px;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: var(--plum-2);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 12px
+    }
+
+    .non-goal-list li::before {
+      content: "\2013";
+      background: var(--gold)
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px
+    }
+
+    .arch-box {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fff, #faf6fb);
+      padding: 18px
+    }
+
+    .arch-box h3 {
+      margin-top: 0
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--light-gold);
+      color: #9c5c6e;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: 8px;
+      margin: 4px 6px 4px 0;
+      font-size: 13px
+    }
+
+    .why-box {
+      background: linear-gradient(180deg, #fdf1f4, #fbe4ea);
+      border: 1px solid #f0c3cf;
+      border-left: 4px solid var(--gold);
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin: 14px 0
+    }
+
+    .why-box .why-label {
+      display: inline-block;
+      color: #9c5c6e;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: .08em;
+      margin-bottom: 8px
+    }
+
+    .why-box p {
+      margin: 0 0 8px;
+      color: #7a3f4d
+    }
+
+    .why-box p:last-child {
+      margin-bottom: 0
+    }
+
+    .diagram {
+      background: var(--light-plum);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      margin: 20px 0;
+      overflow-x: auto
+    }
+
+    .diagram pre.mermaid {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      text-align: center
+    }
+
+    .diagram pre.mermaid:not([data-processed]) {
+      color: var(--muted);
+      font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+      font-size: 12px
+    }
+
+    .diagram .cap {
+      color: var(--muted);
+      font-size: 12.5px;
+      margin-top: 10px;
+      text-align: center
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: 3px 10px;
+      border-radius: 999px;
+      vertical-align: middle;
+      margin-left: 8px
+    }
+
+    .pill-done {
+      background: #fbe4ea;
+      color: #c9708f
+    }
+
+    .pill-scope {
+      background: #fbe4ea;
+      color: #7a5a1f
+    }
+
+    .req-id {
+      font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+      color: var(--plum-2);
+      font-weight: 800;
+      font-size: 13px
+    }
+
+    .note-inline {
+      color: var(--muted);
+      font-size: 13px
+    }
+
+    td ul.cell-list {
+      margin: 0;
+      padding-left: 16px;
+      list-style: disc
+    }
+
+    td ul.cell-list li {
+      margin: 0 0 6px
+    }
+
+    td ul.cell-list li:last-child {
+      margin-bottom: 0
+    }
+
+    td ul.cell-list li>strong {
+      color: var(--plum)
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap
+    }
+
+    .tag-extract {
+      background: #fbe4ea;
+      color: #c9708f
+    }
+
+    .tag-model {
+      background: #fbe4ea;
+      color: #7a5a1f
+    }
+
+    .tag-app {
+      background: #fbe4da;
+      color: #a04a2e
+    }
+
+    @media(max-width:980px) {
+      .layout {
+        display: block
+      }
+
+      aside {
+        position: relative;
+        height: auto
+      }
+
+      main {
+        padding: 22px
+      }
+
+      h1 {
+        font-size: 32px
+      }
+
+      .callout-grid,
+      .two-col {
+        grid-template-columns: 1fr
+      }
+    }
+
+    @media print {
+      body {
+        background: white
+      }
+
+      .layout {
+        display: block
+      }
+
+      aside {
+        display: none
+      }
+
+      main {
+        max-width: none;
+        padding: 0
+      }
+
+      .hero,
+      .section-card {
+        box-shadow: none;
+        break-inside: avoid
+      }
+
+      .table-wrap {
+        overflow: visible
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+    <aside>
+      <div class="brand">Ballet Pose Classifier</div>
+      <div class="brand-subtitle">Technical Design · Pose Estimation ML Pipeline</div>
+      <nav>
+        <div class="nav-group">Orientation</div>
+        <a href="#summary">Executive Summary</a>
+        <a href="#goals">Goals &amp; Non-Goals</a>
+        <div class="nav-group">Structure &amp; Flow</div>
+        <a href="#architecture">System Architecture</a>
+        <a href="#flow">End-to-End Pipeline</a>
+        <div class="nav-group">Feature Design</div>
+        <a href="#features">Joint Angle Features</a>
+        <a href="#grouping">Feature-Group Routing</a>
+        <div class="nav-group">Components</div>
+        <a href="#components">Components</a>
+        <a href="#models">Models &amp; Tracking</a>
+        <div class="nav-group">Decisions</div>
+        <a href="#decisions">Key Design Decisions</a>
+        <div class="nav-group">Appendix</div>
+        <a href="#stack">Tech Stack</a>
+        <a href="#positions">Supported Positions</a>
+      </nav>
+    </aside>
+
+    <main>
+      <div class="hero">
+        <span class="eyebrow">Technical Design · ML Pipeline</span>
+        <h1>Ballet Pose Classifier</h1>
+        <p class="subtitle">A pose-estimation pipeline that identifies ballet positions from a single photograph —
+          trained on joint angles rather than raw pixels, with a feature-group-aware classifier and a Streamlit demo
+          for live inference.</p>
+        <p class="hero-note">Image → MediaPipe pose estimation → 33 3D keypoints → 24 joint-angle features →
+          feature-group-routed classifier → predicted position with a full confidence breakdown across 19 classes.
+        </p>
+      </div>
+
+      <!-- ===================== SUMMARY ===================== -->
+      <section class="section-card" id="summary">
+        <div class="section-kicker">Overview</div>
+        <h2>Executive Summary</h2>
+        <p>Rather than training a CNN directly on pixels, this pipeline extracts skeletal keypoints with MediaPipe
+          and converts them into joint angles before classification. That single design choice — features over
+          pixels — is what makes the rest of the system possible on a comparatively small, self-collected image
+          set: the model doesn't need to learn what a dancer or a studio looks like, only what a knee angle of
+          roughly 160° combined with a hip abduction of 45° means.</p>
+        <div class="callout-grid">
+          <div class="callout">
+            <div class="label">Input</div>
+            <div class="value">Single photograph</div>
+          </div>
+          <div class="callout">
+            <div class="label">Feature space</div>
+            <div class="value">24 joint angles</div>
+          </div>
+          <div class="callout">
+            <div class="label">Classes</div>
+            <div class="value">19 positions</div>
+          </div>
+          <div class="callout">
+            <div class="label">Deployment</div>
+            <div class="value">Streamlit demo</div>
+          </div>
+        </div>
+        <div class="why-box">
+          <span class="why-label">Why joint angles, not pixels</span>
+          <p>Angle-based features are <strong>rotation-invariant</strong> (work from any camera angle),
+            <strong>scale-invariant</strong> (work regardless of distance from camera), and — with sorted
+            left/right pairs — <strong>side-invariant</strong>, so a left arabesque and a right arabesque collapse
+            into the same training example instead of needing to be learned separately.</p>
+        </div>
+      </section>
+
+      <!-- ===================== GOALS ===================== -->
+      <section class="section-card" id="goals">
+        <h2>Goals &amp; Non-Goals</h2>
+        <div class="two-col">
+          <div class="arch-box">
+            <h3>Goals</h3>
+            <ul class="check-list">
+              <li>Classify a single uploaded photo into one of 19 ballet positions with a calibrated confidence
+                score per class.</li>
+              <li>Generalize across camera angle, dancer distance, and left/right symmetry without needing
+                separately labeled mirror-image classes.</li>
+              <li>Train well on a comparatively small, self-collected dataset by using a compact, hand-designed
+                feature space instead of raw pixels.</li>
+              <li>Compare multiple classical ML classifiers head-to-head and track every run for reproducibility.
+              </li>
+            </ul>
+          </div>
+          <div class="arch-box">
+            <h3>Non-Goals</h3>
+            <ul class="check-list non-goal-list">
+              <li>No video or multi-frame temporal input — single-image inference only.</li>
+              <li>No multi-dancer detection — MediaPipe uses the first person it detects in frame.</li>
+              <li>No deep learning on raw pixels — the design deliberately avoids needing a large labeled image
+                corpus.</li>
+              <li>No mid-transition pose recognition — designed for clear, held positions.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== ARCHITECTURE ===================== -->
+      <section class="section-card" id="architecture">
+        <div class="section-kicker">Structure</div>
+        <h2>System Architecture</h2>
+        <p>The pipeline is a linear feature-extraction chain feeding a routed ensemble of classical classifiers,
+          not an end-to-end neural network — a deliberate choice given dataset size.</p>
+        <div class="diagram">
+          <pre class="mermaid">
+flowchart LR
+    A["Photograph"] --> B["MediaPipe Pose<br/>pose_landmarker_heavy"]
+    B --> C["33 3D Keypoints"]
+    C --> D["Normalizer<br/>centre + scale by torso"]
+    D --> E["24 Joint Angle Features"]
+    E --> F["GroupedClassifier<br/>routes by pose family"]
+    F --> G["Predicted Position<br/>+ confidence breakdown"]
+          </pre>
+          <div class="cap">Keypoints are centred on the hip midpoint and scaled by torso length before any angle
+            is computed, removing position and size in frame as confounds.</div>
+        </div>
+        <div style="margin-top:8px">
+          <span class="badge">MediaPipe Tasks</span>
+          <span class="badge">OpenCV</span>
+          <span class="badge">scikit-learn</span>
+          <span class="badge">MLflow</span>
+          <span class="badge">Streamlit</span>
+        </div>
+      </section>
+
+      <!-- ===================== FLOW ===================== -->
+      <section class="section-card" id="flow">
+        <h2>End-to-End Pipeline</h2>
+        <div class="flow">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div>
+              <div class="flow-title">Pose extraction</div>
+              <div class="flow-desc">MediaPipe's <code>pose_landmarker_heavy</code> model extracts 33 3D keypoints
+                per image. Images where no pose is detected, or where landmark confidence is too low, are reported
+                and skipped rather than silently guessed at.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div>
+              <div class="flow-title">Normalization</div>
+              <div class="flow-desc">Keypoints are centred on the hip midpoint and scaled by torso length, removing
+                the dancer's position and size in frame before any angle is computed.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div>
+              <div class="flow-title">Feature engineering</div>
+              <div class="flow-desc">Keypoints are converted into 24 joint angle features — 12 directional angles,
+                4 symmetric arm angle pairs, and 8 symmetric leg angle pairs.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div>
+              <div class="flow-title">Dataset build</div>
+              <div class="flow-desc">Feature vectors are split into <code>train.csv</code>, <code>val.csv</code>,
+                and <code>test.csv</code>, with class labels saved to <code>label_classes.npy</code>.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">5</div>
+            <div>
+              <div class="flow-title">Training &amp; comparison</div>
+              <div class="flow-desc">Four classifiers — Random Forest, SVM, Gradient Boosting, and an MLP — are
+                trained and compared in a single run, each logged to MLflow with parameters and metrics.</div>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">6</div>
+            <div>
+              <div class="flow-title">Inference</div>
+              <div class="flow-desc">The best-performing model is saved and loaded by both the Streamlit demo and
+                the CLI predictor, returning a predicted class with a full per-class probability breakdown.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== FEATURES ===================== -->
+      <section class="section-card" id="features">
+        <div class="section-kicker">Feature Design</div>
+        <h2>Joint Angle Features</h2>
+        <p>The model uses 24 joint angle features per image, chosen specifically to encode the geometry that
+          distinguishes ballet positions while discarding everything that doesn't.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature group</th>
+                <th>Count</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Directional angles</td>
+                <td>12</td>
+                <td>Left/right knee, hip, elbow, shoulder, ankle, and hip abduction (turnout) — kept separate by
+                  side where the distinction matters.</td>
+              </tr>
+              <tr>
+                <td>Symmetric arm angles</td>
+                <td>4</td>
+                <td>Sorted left/right pairs, so an arm raised on either side looks identical — used for third and
+                  fourth position.</td>
+              </tr>
+              <tr>
+                <td>Symmetric leg angles</td>
+                <td>8</td>
+                <td>Sorted left/right pairs, so either working leg looks identical — used for all one-legged
+                  poses (arabesque, attitude, passé, etc.).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================== GROUPING ===================== -->
+      <section class="section-card" id="grouping">
+        <h2>Feature-Group Routing</h2>
+        <p>A single flat classifier trained on all 24 features would let irrelevant angles add noise to positions
+          that don't depend on them. The <code>GroupedClassifier</code> instead routes each pose family to a
+          sub-model that only sees the angles relevant to distinguishing within that family.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>Features used</th>
+                <th>Classes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>leg_focused</code></td>
+                <td>8 symmetric leg angles</td>
+                <td>tendu, dégagé, arabesque, attitude, passé, penché, pliés, fondu</td>
+              </tr>
+              <tr>
+                <td><code>symmetric_body</code></td>
+                <td>8 symmetric leg + 4 symmetric arm angles</td>
+                <td>third, fourth position</td>
+              </tr>
+              <tr>
+                <td><code>full_body</code></td>
+                <td>all 12 directional angles</td>
+                <td>first, second, fifth position</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================== COMPONENTS ===================== -->
+      <section class="section-card" id="components">
+        <div class="section-kicker">Implementation</div>
+        <h2>Components</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>File</th>
+                <th>Responsibility</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="tag tag-extract">Extraction</span></td>
+                <td><code>src/extraction/pose_extractor.py</code></td>
+                <td>Runs MediaPipe pose estimation on an image, returns 33 3D keypoints or reports a detection
+                  failure.</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-extract">Normalization</span></td>
+                <td><code>src/preprocessing/normalizer.py</code></td>
+                <td>Converts raw keypoints into the 24 joint-angle feature vector, centred and scaled.</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-extract">Dataset build</span></td>
+                <td><code>src/preprocessing/dataset_builder.py</code>, <code>build_dataset.py</code></td>
+                <td>Runs extraction + normalization across the raw image folders, writes train/val/test splits.</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-model">Classifiers</span></td>
+                <td><code>src/models/classifier.py</code></td>
+                <td>Wrappers for Random Forest, SVM, Gradient Boosting, and MLP with their hyperparameters.</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-model">Grouped routing</span></td>
+                <td><code>src/models/grouped_classifier.py</code>, <code>src/utils/feature_groups.py</code></td>
+                <td>Routes each pose family to the sub-model trained on its relevant feature subset.</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-model">Training</span></td>
+                <td><code>train.py</code>, <code>run_training.py</code></td>
+                <td>Trains all four classifiers, logs runs to MLflow, saves the best-performing model.</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-app">Inference — web</span></td>
+                <td><code>app.py</code></td>
+                <td>Streamlit demo: upload a photo, see the prediction and full class probability breakdown.</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-app">Inference — CLI</span></td>
+                <td><code>predict.py</code></td>
+                <td>Single-image command-line inference with an ASCII probability bar chart.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================== MODELS ===================== -->
+      <section class="section-card" id="models">
+        <h2>Models &amp; Experiment Tracking</h2>
+        <p>Four classical classifiers are trained and compared in a single run rather than committing to one
+          architecture upfront — reasonable given the feature space is low-dimensional (24 features) and the
+          dataset is comparatively small, where classical models often match or beat deep architectures.</p>
+        <ul class="check-list">
+          <li><strong>Random Forest</strong> — the shipped baseline model, robust to the noisiest keypoint
+            detections.</li>
+          <li><strong>SVM</strong> — strong on the lower-dimensional, well-separated feature space.</li>
+          <li><strong>Gradient Boosting</strong> — captures non-linear interactions between joint angles.</li>
+          <li><strong>MLP</strong> — a small neural baseline for comparison against the classical methods.</li>
+        </ul>
+        <p>Every run's parameters and metrics are logged to <strong>MLflow</strong>, and the best-performing model
+          is saved automatically to <code>models/saved/</code> — the demo and CLI both load the most recently
+          modified <code>.pkl</code>, so a newly trained model is picked up without any manual wiring.</p>
+      </section>
+
+      <!-- ===================== DECISIONS ===================== -->
+      <section class="section-card" id="decisions">
+        <h2>Key Design Decisions</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Decision</th>
+                <th>Rationale</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Joint angles over raw pixels</td>
+                <td>Makes the classifier rotation-, scale-, and side-invariant by construction, and lets it train
+                  well on a small, self-collected image set instead of requiring a large labeled corpus for a
+                  CNN.</td>
+              </tr>
+              <tr>
+                <td>Sorted left/right feature pairs</td>
+                <td>Collapses mirrored poses (a left arabesque and a right arabesque) into a single training
+                  example instead of needing separately labeled classes for each side.</td>
+              </tr>
+              <tr>
+                <td>Feature-group-routed classifier</td>
+                <td>Prevents angles irrelevant to a pose family from adding noise — a two-legged position
+                  classifier never sees single-leg working-leg angles it has no use for.</td>
+              </tr>
+              <tr>
+                <td>Four classifiers trained per run, best one kept</td>
+                <td>Removes the need to guess the right model family upfront; classical models are compared
+                  empirically rather than assumed.</td>
+              </tr>
+              <tr>
+                <td>Explicit "no pose detected" failure mode</td>
+                <td>The app reports when no skeleton can be found rather than guessing on a low-confidence
+                  detection, which keeps the confidence scores it does report meaningful.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================== STACK ===================== -->
+      <section class="section-card" id="stack">
+        <h2>Tech Stack</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Library</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Pose estimation</td>
+                <td>MediaPipe Tasks (<code>pose_landmarker_heavy</code>)</td>
+              </tr>
+              <tr>
+                <td>Image I/O</td>
+                <td>OpenCV</td>
+              </tr>
+              <tr>
+                <td>Classifiers</td>
+                <td>scikit-learn (Random Forest, SVM, Gradient Boosting, MLP)</td>
+              </tr>
+              <tr>
+                <td>Data handling</td>
+                <td>NumPy, pandas</td>
+              </tr>
+              <tr>
+                <td>Experiment tracking</td>
+                <td>MLflow</td>
+              </tr>
+              <tr>
+                <td>Web demo</td>
+                <td>Streamlit</td>
+              </tr>
+              <tr>
+                <td>Configuration</td>
+                <td>PyYAML</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================== POSITIONS ===================== -->
+      <section class="section-card" id="positions">
+        <h2>Supported Positions</h2>
+        <p>19 positions across five categories, defined in <code>data_config.yaml</code>. Adding a new position
+          means adding it to the config, listing it under the correct feature group, and creating its raw-image
+          folder — classes with no image folder are skipped with a warning rather than failing the run.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Classes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Positions</td>
+                <td>first, second, third, fourth, fifth position</td>
+              </tr>
+              <tr>
+                <td>One-legged</td>
+                <td>arabesque, attitude derrière, attitude devant, passé, penché</td>
+              </tr>
+              <tr>
+                <td>Tendu</td>
+                <td>tendu devant, tendu à la seconde, tendu derrière</td>
+              </tr>
+              <tr>
+                <td>Dégagé</td>
+                <td>dégagé devant, dégagé à la seconde, dégagé derrière</td>
+              </tr>
+              <tr>
+                <td>Two-legged</td>
+                <td>demi plié, grand plié, fondu</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    function renderMermaid() {
+      if (typeof mermaid === 'undefined') {
+        document.querySelectorAll('pre.mermaid').forEach(function (el) {
+          var note = document.createElement('div');
+          note.style.cssText = 'color:#c9708f;font:12px ui-monospace,Menlo,monospace;padding:8px;border:1px dashed #e2a8ba;border-radius:6px';
+          note.textContent = 'Diagram could not load: mermaid bundle was blocked. Open this file over http:// (a local web server) rather than file:// or a sandboxed preview.';
+          el.replaceWith(note);
+        });
+        return;
+      }
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        securityLevel: 'loose',
+        flowchart: { htmlLabels: true, useMaxWidth: true, curve: 'linear' },
+        themeVariables: {
+          fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
+          fontSize: '13px',
+          primaryColor: '#f1eaf5',
+          primaryBorderColor: '#c9708f',
+          primaryTextColor: '#2c2530',
+          lineColor: '#8a7d90'
+        }
+      });
+      mermaid.run().catch(function (err) { console.error('mermaid.run failed', err); });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', renderMermaid);
+    } else {
+      renderMermaid();
+    }
+  </script>
+</body>
+
+</html>
